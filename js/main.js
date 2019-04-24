@@ -1,4 +1,4 @@
-/* Lab 1 java script by Yunlei Liang, 2019 */
+/* GEOG 575 Final Project by GeoDS, April 24, 2019 */
 
 
 //function to instantiate the Leaflet map
@@ -186,10 +186,6 @@ function getDataChoro(map){
 };
 
   
-
-
-
-
 
 $(document).ready(createMap);
 

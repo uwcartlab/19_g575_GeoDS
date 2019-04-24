@@ -10,12 +10,6 @@
 }
 
 
-
-.range-slider {
-    width: 50%;
-}
-
-
 .legend {
     line-height: 22px;
     color: #555;
@@ -29,23 +23,6 @@
 }
 
 
-.control {
-    line-height: 22px;
-    color: #555;
-}
-
-
-
-.sequence-control-container {
-    width: 240px;
-    height: 30px;
-    background-color: rgba(255,255,255,0.8);
-    padding: 10px;
-    line-height: 45px;
-    text-align: center;
-    border: solid gray 1px;
-}
-
 .title-container {
     width: 400px;
     height: 30px;
@@ -58,6 +35,3 @@
 
 }
 
-.range-slider {
-    width: 200px;
-}
