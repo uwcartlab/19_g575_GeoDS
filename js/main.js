@@ -1,4 +1,4 @@
-/* GEOG 575 Final Project by GeoDS, April 24, 2019 */
+/* aaaGEOG 575 Final Project by GeoDS, April 24, 2019 */
 
 
 //function to instantiate the Leaflet map
