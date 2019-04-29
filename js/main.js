@@ -1,4 +1,4 @@
-/* aaaGEOG 575 Final Project by GeoDS, April 24, 2019 */
+/* GEOG 575 Final Project by GeoDS, April 24, 2019 */
 
 
 //function to instantiate the Leaflet map
@@ -6,14 +6,14 @@
 function createMap(){
     //create the map
     var map = L.map('map', {
-        center: [45,-88.5],
-        zoom: 6
+        center: [45,-90.5],
+        zoom: 7
     });
 	
 	
     //add OSM base tilelayer
    L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' +'<br>Data sources: United States Census Bureau <br> Creator: Yunlei Liang'
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' +'<br>Data sources: United States Census Bureau <br> Creator: Yunlei Liang; Yuhao Kang'
     }).addTo(map);
 
 	
@@ -59,13 +59,13 @@ function createTitle(map){
 
 //specify the color based on a give value
 function getColor(d) {
-    return d > 100 ? '#800026' :
-           d > 75 ? '#BD0026' :
-           d > 50  ? '#E31A1C' :
-           d > 30  ? '#FC4E2A' :
-           d > 20 ? '#FD8D3C' :
-           d > 10  ? '#FEB24C' :
-           d > 5  ? '#FED976' :
+    return d < 7949 ? '#800026' :
+           d < 9874 ? '#BD0026' :
+           d < 15255  ? '#E31A1C' :
+           d < 30296  ? '#FC4E2A' :
+           d < 72341 ? '#FD8D3C' :
+           d < 189868  ? '#FEB24C' :
+           d < 518393  ? '#FED976' :
                      '#FFEDA0';
 }
 
@@ -75,8 +75,8 @@ function style(feature, attributes){
 	var attribute = attributes[0];
    
     return {
-        fillColor: getColor(feature.properties[attribute]*1000),
-        weight: 2,
+        fillColor: getColor(feature.properties[attribute]),
+        weight: 0.4,
         opacity: 1,
         color: 'white',
         dashArray: '3',
@@ -86,23 +86,48 @@ function style(feature, attributes){
 
 
 //a customized function for each feature in the polygon of the choropleth map
-function onEachFeature(feature,attributes,layer){
+function onEachFeature1(feature,attributes,map,layer){
 
 	var attribute = attributes[0];		
-	var popupContent = "<p><b>Name:</b> " + feature.properties.County + "</p>";
-	
-    popupContent += "<p><b>Shape Area:"  + feature.properties[attribute];
+	var popupContent = "<p><b>County:</b> " + feature.properties.travel_d_3 + "</p>";
+	popupContent += "<p><b>CensusBlock:</b> " + feature.properties.travel_d_4 + "</p>";
+    popupContent += "<p><b>AverageTravelDistance:</b>"  + feature.properties[attribute]+ " meters";
 	
 	layer.bindPopup(popupContent);
 	
     layer.on({
-        click: function(){
+        mouseover: function(){
 			this.openPopup();
+		},
+		mouseout: function(){
+			this.closePopup();
+		},
+		click: function(){
+			highlightCBG(this,map);
+			map.eachLayer(function (layer) {
+				map.removeLayer(layer);
+			});
+			
+			//add OSM base tilelayer
+		   L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' +'<br>Data sources: United States Census Bureau <br> Creator: Yunlei Liang'
+			}).addTo(map);
+			
+			AddGrayFeatures(map);			
 		}
+			
     });
 
 }
 
+function highlightCBG(e,map){
+	
+	console.log(e);
+	e.addTo(map);
+	//var layer = e.target;
+	
+	
+};
 
 
 //create the choropleth map
@@ -111,7 +136,7 @@ function createChoropleth(response, map, attributes){
     //create a Leaflet GeoJSON layer
     var geojson1 = L.geoJson(response, {
 		onEachFeature: function(feature,layer){
-			return onEachFeature(feature,attributes,layer)
+			return onEachFeature1(feature,attributes,map,layer)
 		},
 		style: function (feature) {		
 			return style(feature, attributes);			
@@ -126,10 +151,10 @@ function createChoropleth(response, map, attributes){
 	legend1.onAdd = function (map) {
 
 		var div = L.DomUtil.create('div', 'info legend'),
-			grades = [0, 5, 10, 20, 30, 50, 75, 100],
+			grades = [7949, 9874, 15255, 30296, 72341, 189868, 518393, 1436719],
 			labels = [];
 			
-		var content = "Spending in Education ($US billion)<br>";
+		var content = "Average Travel Distance (meters)<br>";
 		$(div).append(content);
 
 		// loop through our density intervals and generate a label with a colored square for each interval
@@ -161,7 +186,7 @@ function processData(data){
     //push each attribute name into attributes array
     for (var attribute in properties){
         //only take attributes with population values
-        if (attribute.indexOf("Shape_Area") > -1){
+        if (attribute.indexOf("travel_d_1") > -1){
             attributes.push(attribute);
         };
     };
@@ -173,7 +198,7 @@ function processData(data){
 //generate the choropleth map data and the two layer control
 function getDataChoro(map){
     //load the data
-    $.ajax("data/WI_cbgs.geojson", {
+    $.ajax("data/WI_cbg_TravelDis.geojson", {
         dataType: "json",
         success: function(response){
             //create an attributes array
@@ -185,6 +210,35 @@ function getDataChoro(map){
 	
 };
 
+function AddGrayFeatures(map){
+    $.ajax("data/WI_cbg_TravelDis.geojson", {
+        dataType: "json",
+        success: function(response){
+			//create a Leaflet GeoJSON layer
+			var geojson1 = L.geoJson(response, {
+				style: function (feature) {		
+					return style1(feature);			
+				}
+			});
+			
+			geojson1.addTo(map);
+        }
+    });
+		
+	
+};
+
+function style1(feature){
+   
+    return {
+        fillColor:"#808080",
+        weight: 0.4,
+        opacity: 1,
+        color: 'white',
+        dashArray: '3',
+        fillOpacity: 0.7
+    };
+}
   
 
 $(document).ready(createMap);
