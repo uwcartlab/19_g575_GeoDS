@@ -20,12 +20,42 @@ function createMap(){
 	//initial map with the proportional symbol map
     getDataChoro(map);
 
-	
+	CreateLegend(map);
 	//create the map title
 	createTitle(map); 
 
+	//create the refresh button
+	L.Control.Refresh = L.Control.extend(
+	{
+		options:
+		{
+			position:'topright',
+		},
+		onAdd: function(map) {
+			var img = L.DomUtil.create('img');
 
+			img.src = '/img/logo.png';
+			img.style.width = '40px';
+
+			L.DomEvent.addListener(img,'click',function(){
+				refreshMap(map);
+			});			
+			return img;
+		},
+
+		onRemove: function(map) {
+			// Nothing to do here
+		}
+	});
+
+	L.control.Refresh = function(opts) {
+		return new L.Control.Refresh(opts);
+	}
+
+	L.control.Refresh({ position: 'topright' }).addTo(map);
 	
+
+	//get the data for generate the histogram
 	d3.csv("/data/travel_distance_WI_his.csv").then(callback);
 	
 	expressed = "distance_from_home";
@@ -36,6 +66,13 @@ function createMap(){
 	};
 	
 };
+
+
+
+function refreshMap(map){
+	removeLayers(map);
+	getDataChoro(map);
+}
 
 //function to create color scale generator
 function makeColorScale(data){
@@ -71,8 +108,8 @@ function makeColorScale(data){
 //function to create coordinated bar chart
 function setChart(csvData,colorScale){
 
-	var w = window.innerWidth * 0.8, h = window.innerHeight * 0.25,
-		translate = "translate(" + 1 + "," + 1 + ")";
+	var w = window.innerWidth * 0.8, h = window.innerHeight * 0.20,
+		translate = "translate(" + 3 + "," + 5 + ")";
     //Example 1.5 line 1...container block
     var chart = d3.select("body") //get the <body> element from the DOM
         .append("svg") //put a new svg in the body
@@ -80,12 +117,12 @@ function setChart(csvData,colorScale){
         .attr("height", h) //assign the height
         .attr("class", "chart"); //assign a class name
 	
-   var chartBackground = chart.append("rect")
+    var chartBackground = chart.append("rect")
         .attr("class", "chartBackground")
         .attr("width", w*0.95)
         .attr("height", h); //svg background color	
 
-	console.log(csvData);
+	
     var bars = chart.selectAll(".bar")
         .data(csvData)
         .enter()
@@ -93,14 +130,21 @@ function setChart(csvData,colorScale){
         .attr("class", function(d){
             return "bar " + d.RowLabels;
         })
-        .attr("width",w/csvData.length-1);
- 
+        .attr("width",w/csvData.length-5)
+		.on("mouseover", highlight)
+        .on("mouseout", dehighlight)
+		.on("mousemove", moveLabel);
+	
+	
+    var desc = bars.append("desc")
+        .text('{"stroke": "none", "stroke-width": "0px"}');
+
 	var yScale = d3.scaleLinear()
 	.range([150,0])
 	.domain([0, 1645]);       
  
  //create vertical axis generator
-    var yAxis = d3.axisLeft()
+    var yAxis = d3.axisRight()
         .scale(yScale);
 
     //place axis
@@ -113,8 +157,8 @@ function setChart(csvData,colorScale){
     var chartFrame = chart.append("rect")
         .attr("class", "chartFrame")
         .attr("width", w*0.95)
-        .attr("height", h)
-		.attr("transform", translate);;	
+        .attr("height", h*0.96)
+		.attr("transform", translate);
 		
 	//set bar positions, heights and colors
 	updateChart(bars, csvData.length, colorScale);
@@ -125,7 +169,7 @@ function setChart(csvData,colorScale){
 function updateChart(bars, n, colorScale){
 	//chart frame dimensions
 	var chartWidth = window.innerWidth * 0.75,
-	chartHeight = window.innerHeight * 0.25,
+	chartHeight = window.innerHeight * 0.20,
 	leftPadding = 1,
 	rightPadding = 1,
 	topBottomPadding = 5,
@@ -133,18 +177,16 @@ function updateChart(bars, n, colorScale){
 	chartInnerHeight = chartHeight - topBottomPadding,
 	translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
 	
-
-	console.log(chartHeight);
 	//create a scale to size bars proportionally to frame
 	var yScale = d3.scaleLinear()
-	.range([150,0])
+	.range([100,0])
 	.domain([0, 1645]);
 	
 	expressed="Count_of_distance_from_home";
 
     //position bars
     bars.attr("x", function(d, i){
-            return i * (chartWidth/ n) + leftPadding;
+            return i * (chartWidth/ n-2) + leftPadding+ 40;
         })
         //size/resize bars
         .attr("height", function(d, i){
@@ -158,6 +200,85 @@ function updateChart(bars, n, colorScale){
         });;
 
 };
+
+//function to highlight enumeration units and bars
+function highlight(props){
+
+    //change stroke
+    var selected = d3.selectAll("bar."+props.RowLabels)
+        .style("stroke", "blue")
+        .style("stroke-width", "2");
+	
+	setLabel(props);
+};
+
+//function to create dynamic label
+function setLabel(props){
+    //label content
+    var labelAttribute = props["Count_of_distance_from_home"] + "times";
+
+    //create info label div
+    var infolabel = d3.select("body")
+        .append("div")
+        .attr("class", "infolabel")
+        .attr("id", props.RowLabels + "_label")
+        .html(labelAttribute);
+
+	var datarange = 'data range:' + props.RowLabels;
+    var regionName = infolabel.append("div")
+        .attr("class", "labelname")
+        .html(datarange);
+};
+
+//function to move info label with mouse
+function moveLabel(){
+    //get width of label
+    var labelWidth = d3.select(".infolabel")
+        .node()
+	    .getBoundingClientRect()
+        .width;
+
+    //use coordinates of mousemove event to set label coordinates
+    var x1 = d3.event.clientX + 10,
+        y1 = d3.event.clientY - 30,
+        x2 = d3.event.clientX - labelWidth - 10,
+        y2 = d3.event.clientY + 25;
+
+    //horizontal label coordinate, testing for overflow
+    var x = d3.event.clientX > window.innerWidth - labelWidth - 20 ? x2 : x1; 
+    //vertical label coordinate, testing for overflow
+    var y = d3.event.clientY < 30 ? y2 : y1; 
+
+    d3.select(".infolabel")
+        .style("left", x + "px")
+        .style("top", y + "px");
+
+};
+
+//function to reset the element style on mouseout
+function dehighlight(props){
+    var selected = d3.selectAll("."+props.RowLabels)
+        .style("stroke", function(){
+            return getStyle(this, "stroke")
+        })
+        .style("stroke-width", function(){
+            return getStyle(this, "stroke-width")
+        });
+
+    function getStyle(element, styleName){
+        var styleText = d3.select(element)
+            .select("desc")
+            .text();
+
+        var styleObject = JSON.parse(styleText);
+
+        return styleObject[styleName];
+    };
+	
+	d3.select(".infolabel")
+        .remove();
+};
+
 
 //function to test for data value and return color
 function choropleth(props, colorScale){
@@ -229,6 +350,19 @@ function style(feature, attributes){
     };
 }
 
+function removeLayers(map){
+	
+	map.eachLayer(function (layer) {
+		map.removeLayer(layer);
+	});
+	
+	//add OSM base tilelayer
+   L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' +'<br>Data sources: United States Census Bureau <br> Creator: Yunlei Liang'
+	}).addTo(map);
+
+	
+};
 
 //a customized function for each feature in the polygon of the choropleth map
 function onEachFeature1(feature,attributes,map,layer){
@@ -249,17 +383,7 @@ function onEachFeature1(feature,attributes,map,layer){
 		},
 		click: function(){
 
-			map.eachLayer(function (layer) {
-				map.removeLayer(layer);
-			});
-			
-			//add OSM base tilelayer
-		   L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' +'<br>Data sources: United States Census Bureau <br> Creator: Yunlei Liang'
-			}).addTo(map);
-			
-			//AddGrayFeatures(map);	
-			highlightCBG(this,map);
+			removeLayers(map);
 			
 			var cbg_d = this.feature.properties.WI_cbgs_Ce;
 			
@@ -269,17 +393,19 @@ function onEachFeature1(feature,attributes,map,layer){
 				var HighlightData = [];
 				for (i =0; i<data.length; i++){
 					if (cbg_d == data[i]["cbg_d"]){
-						HighlightData.push(data[i]["cbg_o"]);
+						HighlightData.push(data[i]);
 					}
 				}
 				console.log(HighlightData);
 				HighlightFeatures(HighlightData,map);
 			};
+			//AddGrayFeatures(map);	
+			this.addTo(map);
 		}
 			
     });
 
-}
+};
 
 function highlightCBG(e,map){
 	
@@ -308,27 +434,54 @@ function AddHighlight(response, map, attributes,data){
 	
     //create a Leaflet GeoJSON layer
     L.geoJson(response, {
+		onEachFeature: function(feature,layer){
+			return onEachFeatureHighlight(feature,attributes,map,layer,data)
+		},
 		style: function (feature) {		
 			return styleHightlighted(feature,attributes,data);			
-		}
+		}	
     }).addTo(map);
     
 
 };
 
 
+function onEachFeatureHighlight(feature,attributes,map,layer,data){
+
+	for (i=0; i<data.length; i++){
+		if (feature.properties.travel_d_4 == data[i]["cbg_o"]){
+			var popupContent = "<p><b>Destination CensusBlock:</b> " + data[i]["cbg_d"] + "</p>";
+			popupContent += "<p><b>Total Visits:</b>"  + data[i]["number"]+ "times";
+			
+			layer.bindPopup(popupContent);
+			
+			layer.on({
+				mouseover: function(){
+					this.openPopup();
+				},
+				mouseout: function(){
+					this.closePopup();
+				}
+					
+			});
+		};
+		
+	}
+
+};
+
 function styleHightlighted(feature,attributes,data){
 
-	var attribute = attributes[1];
+
 //	var checkExistence = checkExistence(feature.properties.travel_d_4,data);
 	for (i=0; i<data.length; i++){
-		if (feature.properties.travel_d_4 == data[i]){
+		if (feature.properties.travel_d_4 == data[i]["cbg_o"]){			
 			return {
-			fillColor: "#87CEEB",
+			fillColor: "#FFFF00",
 			weight: 0.4,
+			stroke: '#999',
 			opacity: 1,
-			color: 'white',
-			dashArray: '3',
+			color: 'gray',
 			fillOpacity: 10
 		} 
 		};
@@ -340,8 +493,7 @@ function styleHightlighted(feature,attributes,data){
 			weight: 0.4,
 			opacity: 1,
 			color: 'white',
-			dashArray: '3',
-			fillOpacity: 10
+			fillOpacity: 0.4
 		} 
 
 
@@ -383,6 +535,12 @@ function createChoropleth(response, map, attributes){
     
     geojson1.addTo(map);
 
+	//return the geojson layer for display
+	return geojson1;
+
+};
+
+function CreateLegend(map){
 	//generate the legend for the choropleth map
 	var legend1 = L.control({position: 'topleft'});
 
@@ -405,9 +563,6 @@ function createChoropleth(response, map, attributes){
 		return div;
 	};
 	legend1.addTo(map);	
-	
-	//return the geojson layer for display
-	return geojson1;
 
 };
 
