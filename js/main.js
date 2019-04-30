@@ -7,7 +7,10 @@ function createMap(){
     //create the map
     var map = L.map('map', {
         center: [45,-90.5],
-        zoom: 7
+        zoom: 7,
+        maxZoom: 12,
+        minZoom: 5,
+        maxBounds: [[40, -85], [50, -95]]
     });
 	
 	
