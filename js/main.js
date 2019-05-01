@@ -686,18 +686,20 @@ d3.csv("data/geog575.csv", function(d){
     var bar = g.selectAll(".bar")
       .data(bins)
       .enter().append("g")
-        .attr("class", "bar")
+        .attr("class", "bar_income")
         .attr("transform", function(d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; })
         .style("fill", function(d){
-            return "#D4B9DA";
+            return "#000";
         });
     
     bar.append("rect")
+        .attr("class", "income_rect")
         .attr("x", 1)
         .attr("width", x(bins[0].x1) - x(bins[0].x0) - 1)
         .attr("height", function(d) { return height - y(d.length); })
         .style("fill", function(d){
-            return "#fff";
+            //return "#D4B9DA";
+            return "#eaeaea";
         });
 
     bar.append("text")
@@ -739,7 +741,7 @@ d3.csv("data/geog575.csv", function(d){
     slider.insert("g", ".track-overlay")
         .attr("class", "ticks")
         .attr("transform", "translate(0," + 18 + ")")
-    .selectAll("text")
+        .selectAll("text")
         .data(x.ticks(10))
         .enter()
         .append("text")
@@ -753,6 +755,35 @@ d3.csv("data/geog575.csv", function(d){
         .attr("r", 9);
 
 
+    function update(h) {
+        handle.attr("cx", x(h));
+        console.log(h);
+
+        // filter data set and redraw plot
+        //var newData = dataset.filter(function(d) {
+        var newData = income.filter(function(d) {
+            return d < h;
+        })
+        //console.log(newData);
+        //drawPlot(newData);
+        
+        var bar_income = d3.selectAll(".income_rect")
+            .style("fill", function(d) {
+                //console.log(d);
+            if (d.x0 < h) {
+                console.log(d.x0<h);
+                return "#000";
+                //return colours(d.x0);
+            } else {
+                return "#fff";
+            }
+            });
+        console.log(bar_income);
+            }
+
+        var colours = d3.scaleOrdinal()
+        //.domain(dateArray)
+        .range(['#ffc388','#ffb269','#ffa15e','#fd8f5b','#f97d5a','#f26c58','#e95b56','#e04b51','#d53a4b','#c92c42','#bb1d36','#ac0f29','#9c0418','#8b0000']);
 
 
 })
