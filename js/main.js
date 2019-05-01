@@ -634,7 +634,128 @@ function style1(feature){
         fillOpacity: 0.7
     };
 }
-  
+
+
+
+var svg_income = d3.select("#vis")
+    .append("svg")
+    .attr("width",1000)
+    .attr("height",600);
+
+var svg_filter = d3.select("#fileter")
+    .append("svg")
+    .attr("width",1000)
+    .attr("height",200);
+
+// Load csv data
+d3.csv("data/geog575.csv", function(d){
+    return {
+    census_block_group : d.census_block_group,
+    visitor_home_cbgs : d.visitor_home_cbgs,
+    income : d.income,
+    rent: d.rent,
+    unemploy_ratio: d.unemploy_ratio
+  };
+}
+).then(function(data){
+    var income = [];
+    data.forEach(element => {
+        income.push(parseInt(element.income));
+    });
+    var formatCount = d3.format(",.0f");
+
+    var svg = d3.select("svg"),
+        margin = {top: 50, right: 30, bottom: 30, left: 30},
+        width = +svg.attr("width") - margin.left - margin.right,
+        height = +svg.attr("height") - margin.top - margin.bottom,
+        g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var x = d3.scaleLinear()
+        .rangeRound([0, width])
+				.domain([0,d3.max(income)]);
+    
+    var bins = d3.histogram()
+        .domain(x.domain())
+        .thresholds(x.ticks(50))
+        (income);
+
+    var y = d3.scaleLinear()
+        .domain([0, d3.max(bins, function(d) { return d.length; })])
+        .range([height, 0]);
+
+    var bar = g.selectAll(".bar")
+      .data(bins)
+      .enter().append("g")
+        .attr("class", "bar")
+        .attr("transform", function(d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; })
+        .style("fill", function(d){
+            return "#D4B9DA";
+        });
+    
+    bar.append("rect")
+        .attr("x", 1)
+        .attr("width", x(bins[0].x1) - x(bins[0].x0) - 1)
+        .attr("height", function(d) { return height - y(d.length); })
+        .style("fill", function(d){
+            return "#fff";
+        });
+
+    bar.append("text")
+        //.attr("dy", "0em")
+        .attr("y", -5)
+        .attr("x", (x(bins[0].x1) - x(bins[0].x0)) / 2)
+        .attr("text-anchor", "middle")
+        .text(function(d) { return formatCount(d.length); });
+
+    g.append("g")
+        .attr("class", "axis axis--x")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+
+
+
+    var currentValue = 0;
+
+    var slider = svg_income.append("g")
+        .attr("class", "slider")
+        .attr("transform", "translate(" + margin.left + "," + (margin.top+200) + ")");
+
+    slider.append("line")
+        .attr("class", "track")
+        .attr("x1", x.range()[0])
+        .attr("x2", x.range()[1])
+    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+        .attr("class", "track-inset")
+    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+        .attr("class", "track-overlay")
+        .call(d3.drag()
+            .on("start.interrupt", function() { slider.interrupt(); })
+            .on("start drag", function() {
+            currentValue = d3.event.x;
+            update(x.invert(currentValue)); 
+            })
+        );
+
+    slider.insert("g", ".track-overlay")
+        .attr("class", "ticks")
+        .attr("transform", "translate(0," + 18 + ")")
+    .selectAll("text")
+        .data(x.ticks(10))
+        .enter()
+        .append("text")
+        .attr("x", x)
+        .attr("y", 10)
+        .attr("text-anchor", "middle")
+        .text(function(d) { return "a"; });
+
+    var handle = slider.insert("circle", ".track-overlay")
+        .attr("class", "handle")
+        .attr("r", 9);
+
+
+
+
+})
 
 $(document).ready(createMap);
 

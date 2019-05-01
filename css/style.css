@@ -84,3 +84,17 @@
     display: inline-block;
     line-height: 1em;
 }
+
+
+.bar text {
+  fill: #000;
+  font: 10px sans-serif;
+}
+
+
+.track-overlay {
+      pointer-events: stroke;
+      stroke-width: 50px;
+      stroke: transparent;
+      cursor: crosshair;
+    }
