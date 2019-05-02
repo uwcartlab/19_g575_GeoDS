@@ -39,7 +39,7 @@
     fill: rgba(240,248,255);
 }
 
-.bar{
+.bar_distance{
 	fill: rgba(135,206,235);
 	stroke: rgba(25,25,112);
     stroke-width: 0.5px;

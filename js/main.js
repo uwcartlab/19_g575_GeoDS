@@ -3,15 +3,15 @@
 
 //function to instantiate the Leaflet map
 
-var income_highest = 0;
+var income_highest = 100000;
 
 function createMap(){
     //create the map
     var map = L.map('map', {
         center: [45,-90.5],
         zoom: 7,
-        maxZoom: 12,
-        minZoom: 5,
+        maxZoom: 13,
+        minZoom: 6,
         maxBounds: [[40, -85], [50, -95]]
     });
 	
@@ -128,12 +128,13 @@ function setChart(csvData,colorScale){
         .attr("height", h); //svg background color	
 
 	
-    var bars = chart.selectAll(".bar")
+    var bars = chart.selectAll(".bar_distance")
         .data(csvData)
         .enter()
         .append("rect")
+		.style("stroke-width","0")
         .attr("class", function(d){
-            return "bar " + d.RowLabels;
+            return "bar_distance"+ d.RowLabels;
         })
         .attr("width",w/csvData.length-5)
 		.on("mouseover", highlight)
@@ -210,18 +211,17 @@ function updateChart(bars, n, colorScale){
 function highlight(props){
 
     //change stroke
-    var selected = d3.selectAll("bar.")//+props.RowLabels)
-        .style("stroke", "blue")
-        .style("stroke-width", "2");
-	
+	//console.log(props.RowLabels);
+    var selected = d3.selectAll(".bar_distance"+props.RowLabels)
+        .style("stroke","blue")
+		.style("stroke-width","2")
 	setLabel(props);
 };
 
 //function to create dynamic label
 function setLabel(props){
     //label content
-    var labelAttribute = props["Count_of_distance_from_home"] + "times";
-
+    var labelAttribute = "data range:"+props.RowLabels;
     //create info label div
     var infolabel = d3.select("body")
         .append("div")
@@ -229,7 +229,7 @@ function setLabel(props){
         .attr("id", props.RowLabels + "_label")
         .html(labelAttribute);
 
-	var datarange = 'data range:' + props.RowLabels;
+	var datarange = 'frequency:' + props["Count_of_distance_from_home"];
     var regionName = infolabel.append("div")
         .attr("class", "labelname")
         .html(datarange);
@@ -261,7 +261,7 @@ function moveLabel(){
 
 //function to reset the element style on mouseout
 function dehighlight(props){
-    var selected = d3.selectAll(".")//+props.RowLabels)
+    var selected = d3.selectAll(".bar_distance"+props.RowLabels)
         .style("stroke", function(){
             return getStyle(this, "stroke")
         })
@@ -369,7 +369,7 @@ function removeLayers(map){
 };
 
 //a customized function for each feature in the polygon of the choropleth map
-function onEachFeature1(feature,attributes,map,layer){
+function onEachFeatureInitial(feature,attributes,map,layer){
 
 	var attribute = attributes[0];		
 	var popupContent = "<p><b>County:</b> " + feature.properties.travel_d_3 + "</p>";
@@ -391,7 +391,7 @@ function onEachFeature1(feature,attributes,map,layer){
 			
 			var cbg_d = this.feature.properties.WI_cbgs_Ce;
 			
-			d3.csv("/data/home_mobility_WI.csv").then(callback);
+			d3.csv("/data/cbg_alldata.csv").then(callback);
 	
 			function callback(data){
 				var HighlightData = [];
@@ -401,10 +401,16 @@ function onEachFeature1(feature,attributes,map,layer){
 					}
 				}
 				console.log(HighlightData);
-				HighlightFeatures(HighlightData,map);
+				if (HighlightData.length == 0){
+					alert("The cbg you just cliced has no connected cbg in the dataset. Please try others.");
+				}
+				HighlightFeatures(HighlightData,map,cbg_d);
+				//AddGrayFeatures(map);
+				
 			};
-			//AddGrayFeatures(map);	
-			this.addTo(map);
+		console.log(this.getBounds().getCenter());
+		this.addTo(map);
+		map.setView(this.getBounds().getCenter(),10);
 		}
 			
     });
@@ -419,14 +425,14 @@ function highlightCBG(e,map){
 };
 
 
-function HighlightFeatures(data,map){
+function HighlightFeatures(data,map,cbg_d){
 	$.ajax("data/WI_cbg_TravelDis.geojson", {
         dataType: "json",
         success: function(response){
             //create an attributes array
             var attributes = processData(response,"travel_d_4");
 			//get the generated map layer
-			AddHighlight(response,map,attributes,data);
+			AddHighlight(response,map,attributes,data,cbg_d);
         }
     });
 
@@ -434,7 +440,7 @@ function HighlightFeatures(data,map){
 
 
 //create the choropleth map
-function AddHighlight(response, map, attributes,data){
+function AddHighlight(response, map, attributes,data,cbg_d){
 	
     //create a Leaflet GeoJSON layer
     L.geoJson(response, {
@@ -442,10 +448,9 @@ function AddHighlight(response, map, attributes,data){
 			return onEachFeatureHighlight(feature,attributes,map,layer,data)
 		},
 		style: function (feature) {		
-			return styleHightlighted(feature,attributes,data);			
+			return styleHightlighted(feature,attributes,data,cbg_d);			
 		}	
     }).addTo(map);
-    
 
 };
 
@@ -454,9 +459,8 @@ function onEachFeatureHighlight(feature,attributes,map,layer,data){
 
 	for (i=0; i<data.length; i++){
 		if (feature.properties.travel_d_4 == data[i]["cbg_o"]){
-            console.log(data[i]);
-            console.log(income_highest);
-			var popupContent = "<p><b>Destination CensusBlock:</b> " + data[i]["cbg_d"] + "</p>";
+            //console.log(data[i]);
+			var popupContent = "<p><b>Origin CensusBlock:</b> " + data[i]["cbg_d"] + "</p>";
 			popupContent += "<p><b>Total Visits: </b>"  + data[i]["number"]+ " times";
 			
 			layer.bindPopup(popupContent);
@@ -473,15 +477,45 @@ function onEachFeatureHighlight(feature,attributes,map,layer,data){
 		};
 		
 	}
+	layer.on({
+		click: function(){
+
+			removeLayers(map);
+			
+			var cbg_d = this.feature.properties.WI_cbgs_Ce;
+			
+			d3.csv("/data/cbg_alldata.csv").then(callback);
+	
+			function callback(data){
+				var HighlightData = [];
+				for (i =0; i<data.length; i++){
+					if (cbg_d == data[i]["cbg_d"]){
+						HighlightData.push(data[i]);
+					}
+				}
+				console.log(HighlightData);
+				if (HighlightData.length == 0){
+					alert("The cbg you just cliced has no connected cbg in the dataset. Please try others.");
+				}
+				HighlightFeatures(HighlightData,map,cbg_d);
+				//AddGrayFeatures(map);
+				
+			};
+		console.log(this.getBounds().getCenter());
+		this.addTo(map);
+		map.setView(this.getBounds().getCenter(),10);
+		}
+			
+	});
 
 };
 
-function styleHightlighted(feature,attributes,data){
-
+function styleHightlighted(feature,attributes,data,cbg_d){
 
 //	var checkExistence = checkExistence(feature.properties.travel_d_4,data);
+	
 	for (i=0; i<data.length; i++){
-		if (feature.properties.travel_d_4 == data[i]["cbg_o"]){			
+		if (feature.properties.travel_d_4 == data[i]["cbg_o"]&&(parseFloat(data[i]["income"])<income_highest)){			
 			return {
 			fillColor: "#FFFF00",
 			weight: 0.4,
@@ -493,17 +527,24 @@ function styleHightlighted(feature,attributes,data){
 		};
 		
 	}
-	
+	if (feature.properties.travel_d_4 == cbg_d){
+		return {
+			fillColor: "#B22222",
+			weight: 0.4,
+			stroke: '#999',
+			opacity: 1,
+			color: 'gray',
+			fillOpacity: 0.8
+		}
+		
+	}
 	return {
 			fillColor: "#CCC",
 			weight: 0.4,
 			opacity: 1,
 			color: 'white',
 			fillOpacity: 0.4
-		} 
-
-
-	
+		} 	
 
 };
 
@@ -532,7 +573,7 @@ function createChoropleth(response, map, attributes){
     //create a Leaflet GeoJSON layer
     var geojson1 = L.geoJson(response, {
 		onEachFeature: function(feature,layer){
-			return onEachFeature1(feature,attributes,map,layer)
+			return onEachFeatureInitial(feature,attributes,map,layer)
 		},
 		style: function (feature) {		
 			return style(feature, attributes);			
@@ -651,6 +692,7 @@ var svg_filter = d3.select("#fileter")
     .attr("height",200);
 
 // Load csv data
+//realize the function of flitering income histogram
 d3.csv("data/geog575.csv", function(d){
     return {
     census_block_group : d.census_block_group,
@@ -759,8 +801,9 @@ d3.csv("data/geog575.csv", function(d){
 
 
     function update(h) {
+		console.log("test");
         income_highest = h;
-        console.log(income_highest);
+        //console.log(income_highest);
         handle.attr("cx", x(h));
 
         // filter data set and redraw plot
