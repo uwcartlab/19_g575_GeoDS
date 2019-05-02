@@ -86,9 +86,9 @@
 }
 
 
-.bar text {
+.bar_income text {
   fill: #000;
-  font: 10px sans-serif;
+  font: 8px sans-serif;
 }
 
 .ticks {

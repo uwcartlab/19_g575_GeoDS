@@ -3,6 +3,8 @@
 
 //function to instantiate the Leaflet map
 
+var income_highest = 0;
+
 function createMap(){
     //create the map
     var map = L.map('map', {
@@ -208,7 +210,7 @@ function updateChart(bars, n, colorScale){
 function highlight(props){
 
     //change stroke
-    var selected = d3.selectAll("bar."+props.RowLabels)
+    var selected = d3.selectAll("bar.")//+props.RowLabels)
         .style("stroke", "blue")
         .style("stroke-width", "2");
 	
@@ -255,12 +257,11 @@ function moveLabel(){
     d3.select(".infolabel")
         .style("left", x + "px")
         .style("top", y + "px");
-
 };
 
 //function to reset the element style on mouseout
 function dehighlight(props){
-    var selected = d3.selectAll("."+props.RowLabels)
+    var selected = d3.selectAll(".")//+props.RowLabels)
         .style("stroke", function(){
             return getStyle(this, "stroke")
         })
@@ -453,8 +454,10 @@ function onEachFeatureHighlight(feature,attributes,map,layer,data){
 
 	for (i=0; i<data.length; i++){
 		if (feature.properties.travel_d_4 == data[i]["cbg_o"]){
+            console.log(data[i]);
+            console.log(income_highest);
 			var popupContent = "<p><b>Destination CensusBlock:</b> " + data[i]["cbg_d"] + "</p>";
-			popupContent += "<p><b>Total Visits:</b>"  + data[i]["number"]+ "times";
+			popupContent += "<p><b>Total Visits: </b>"  + data[i]["number"]+ " times";
 			
 			layer.bindPopup(popupContent);
 			
@@ -665,7 +668,7 @@ d3.csv("data/geog575.csv", function(d){
     var formatCount = d3.format(",.0f");
 
     var svg = d3.select("svg"),
-        margin = {top: 50, right: 30, bottom: 30, left: 30},
+        margin = {top: 50, right: 30, bottom: 100, left: 30},
         width = +svg.attr("width") - margin.left - margin.right,
         height = +svg.attr("height") - margin.top - margin.bottom,
         g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -698,7 +701,6 @@ d3.csv("data/geog575.csv", function(d){
         .attr("width", x(bins[0].x1) - x(bins[0].x0) - 1)
         .attr("height", function(d) { return height - y(d.length); })
         .style("fill", function(d){
-            //return "#D4B9DA";
             return "#eaeaea";
         });
 
@@ -715,12 +717,11 @@ d3.csv("data/geog575.csv", function(d){
         .call(d3.axisBottom(x));
 
 
-
     var currentValue = 0;
 
     var slider = svg_income.append("g")
         .attr("class", "slider")
-        .attr("transform", "translate(" + margin.left + "," + (margin.top+200) + ")");
+        .attr("transform", "translate(" + margin.left + "," + (margin.top+500) + ")");
 
     slider.append("line")
         .attr("class", "track")
@@ -748,7 +749,9 @@ d3.csv("data/geog575.csv", function(d){
         .attr("x", x)
         .attr("y", 10)
         .attr("text-anchor", "middle")
-        .text(function(d) { return "a"; });
+        .text(function(d) { 
+            return d; 
+        });
 
     var handle = slider.insert("circle", ".track-overlay")
         .attr("class", "handle")
@@ -756,35 +759,42 @@ d3.csv("data/geog575.csv", function(d){
 
 
     function update(h) {
+        income_highest = h;
+        console.log(income_highest);
         handle.attr("cx", x(h));
-        console.log(h);
 
         // filter data set and redraw plot
-        //var newData = dataset.filter(function(d) {
         var newData = income.filter(function(d) {
             return d < h;
         })
-        //console.log(newData);
-        //drawPlot(newData);
         
         var bar_income = d3.selectAll(".income_rect")
             .style("fill", function(d) {
                 //console.log(d);
-            if (d.x0 < h) {
-                console.log(d.x0<h);
-                return "#000";
-                //return colours(d.x0);
-            } else {
-                return "#fff";
-            }
+                if (d.x0 < h) {
+                    return coloursIncome(d.x0);
+                } else {
+                return "#eaeaea";
+                }
             });
-        console.log(bar_income);
-            }
+        }
 
-        var colours = d3.scaleOrdinal()
-        //.domain(dateArray)
-        .range(['#ffc388','#ffb269','#ffa15e','#fd8f5b','#f97d5a','#f26c58','#e95b56','#e04b51','#d53a4b','#c92c42','#bb1d36','#ac0f29','#9c0418','#8b0000']);
 
+        // set color of income histogram
+        var colorClasses = [
+                '#FFEDA0',
+                '#FED976',
+                '#FEB24C',
+                "#FD8D3C",
+                "#FC4E2A",
+                "#E31A1C",
+                "#BD0026",
+                "#800026"			
+            ];
+        
+        var coloursIncome = d3.scaleQuantile()
+        .domain(income)
+        .range(colorClasses);
 
 })
 
