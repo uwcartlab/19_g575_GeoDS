@@ -4,6 +4,8 @@
 //function to instantiate the Leaflet map
 
 var income_highest = 100000;
+var rent_highest = 100000;
+var unemploy_highest = 100000;
 
 function createMap(){
     //create the map
@@ -681,15 +683,21 @@ function style1(feature){
 
 
 
-var svg_income = d3.select("#vis")
+var svg_income = d3.select("#vis_income")
     .append("svg")
     .attr("width",1000)
     .attr("height",600);
 
-var svg_filter = d3.select("#fileter")
+var svg_rent = d3.select("#vis_rent")
     .append("svg")
     .attr("width",1000)
-    .attr("height",200);
+    .attr("height",600);
+
+var svg_unemploy = d3.select("#vis_unemploy")
+    .append("svg")
+    .attr("width",1000)
+    .attr("height",600);
+
 
 // Load csv data
 //realize the function of flitering income histogram
@@ -704,83 +712,84 @@ d3.csv("data/geog575.csv", function(d){
 }
 ).then(function(data){
     var income = [];
+    var rent = [];
+    var unemploy_ratio = [];
+
     data.forEach(element => {
         income.push(parseInt(element.income));
+        rent.push(parseInt(element.rent));
+        unemploy_ratio.push(parseFloat(element.unemploy_ratio));
     });
+
     var formatCount = d3.format(",.0f");
 
-    var svg = d3.select("svg"),
-        margin = {top: 50, right: 30, bottom: 100, left: 30},
-        width = +svg.attr("width") - margin.left - margin.right,
-        height = +svg.attr("height") - margin.top - margin.bottom,
-        g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    incomeHistogram(income, formatCount);
+    rentHistogram(rent, formatCount);
+    unemployHistogram(unemploy_ratio, formatCount);
 
+})
+
+$(document).ready(createMap);
+
+function incomeHistogram(income, formatCount) {
+    var svg = d3.select("svg"), margin = { top: 50, right: 30, bottom: 100, left: 30 }, width = +svg.attr("width") - margin.left - margin.right, height = +svg.attr("height") - margin.top - margin.bottom, g = svg_income.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     var x = d3.scaleLinear()
         .rangeRound([0, width])
-				.domain([0,d3.max(income)]);
-    
+        .domain([0, d3.max(income)]);
     var bins = d3.histogram()
         .domain(x.domain())
-        .thresholds(x.ticks(50))
-        (income);
-
+        .thresholds(x.ticks(50))(income);
     var y = d3.scaleLinear()
-        .domain([0, d3.max(bins, function(d) { return d.length; })])
+        .domain([0, d3.max(bins, function (d) { return d.length; })])
         .range([height, 0]);
-
-    var bar = g.selectAll(".bar")
-      .data(bins)
-      .enter().append("g")
+    var bar_income = g.selectAll(".bar")
+        .data(bins)
+        .enter().append("g")
         .attr("class", "bar_income")
-        .attr("transform", function(d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; })
-        .style("fill", function(d){
+        .attr("transform", function (d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; })
+        .style("fill", function (d) {
             return "#000";
         });
-    
-    bar.append("rect")
+    bar_income.append("rect")
         .attr("class", "income_rect")
         .attr("x", 1)
         .attr("width", x(bins[0].x1) - x(bins[0].x0) - 1)
-        .attr("height", function(d) { return height - y(d.length); })
-        .style("fill", function(d){
+        .attr("height", function (d) { return height - y(d.length); })
+        .style("fill", function (d) {
             return "#eaeaea";
         });
-
-    bar.append("text")
+    bar_income.append("text")
         //.attr("dy", "0em")
         .attr("y", -5)
         .attr("x", (x(bins[0].x1) - x(bins[0].x0)) / 2)
         .attr("text-anchor", "middle")
-        .text(function(d) { return formatCount(d.length); });
-
+        .text(function (d) { return formatCount(d.length); });
     g.append("g")
         .attr("class", "axis axis--x")
         .attr("transform", "translate(0," + height + ")")
         .call(d3.axisBottom(x));
-
-
     var currentValue = 0;
-
     var slider = svg_income.append("g")
         .attr("class", "slider")
-        .attr("transform", "translate(" + margin.left + "," + (margin.top+500) + ")");
-
+        .attr("transform", "translate(" + margin.left + "," + (margin.top + 500) + ")");
     slider.append("line")
         .attr("class", "track")
-        .attr("x1", x.range()[0])
+        //.attr("x1", x.range()[0])
+        .attr("x1", function(){
+            console.log(x.range());
+        })
+            //.range()[0])
         .attr("x2", x.range()[1])
-    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+        .select(function () { return this.parentNode.appendChild(this.cloneNode(true)); })
         .attr("class", "track-inset")
-    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+        .select(function () { return this.parentNode.appendChild(this.cloneNode(true)); })
         .attr("class", "track-overlay")
         .call(d3.drag()
-            .on("start.interrupt", function() { slider.interrupt(); })
-            .on("start drag", function() {
-            currentValue = d3.event.x;
-            update(x.invert(currentValue)); 
-            })
-        );
-
+            .on("start.interrupt", function () { slider.interrupt(); })
+            .on("start drag", function () {
+                currentValue = d3.event.x;
+                update_income(x.invert(currentValue));
+            }));
     slider.insert("g", ".track-overlay")
         .attr("class", "ticks")
         .attr("transform", "translate(0," + 18 + ")")
@@ -791,55 +800,259 @@ d3.csv("data/geog575.csv", function(d){
         .attr("x", x)
         .attr("y", 10)
         .attr("text-anchor", "middle")
-        .text(function(d) { 
-            return d; 
+        .text(function (d) {
+            return d;
         });
-
     var handle = slider.insert("circle", ".track-overlay")
         .attr("class", "handle")
         .attr("r", 9);
-
-
-    function update(h) {
-		console.log("test");
+    function update_income(h) {
         income_highest = h;
         //console.log(income_highest);
         handle.attr("cx", x(h));
-
         // filter data set and redraw plot
-        var newData = income.filter(function(d) {
+        var newData = income.filter(function (d) {
             return d < h;
-        })
-        
+        });
         var bar_income = d3.selectAll(".income_rect")
-            .style("fill", function(d) {
+            .style("fill", function (d) {
                 //console.log(d);
                 if (d.x0 < h) {
                     return coloursIncome(d.x0);
-                } else {
-                return "#eaeaea";
+                }
+                else {
+                    return "#eaeaea";
                 }
             });
-        }
-
-
-        // set color of income histogram
-        var colorClasses = [
-                '#FFEDA0',
-                '#FED976',
-                '#FEB24C',
-                "#FD8D3C",
-                "#FC4E2A",
-                "#E31A1C",
-                "#BD0026",
-                "#800026"			
-            ];
-        
-        var coloursIncome = d3.scaleQuantile()
+    }
+    // set color of income histogram
+    var colorClasses = [
+        '#fff5eb',
+        '#fee6ce',
+        '#fdd0a2',
+        '#fdae6b',
+        '#fd8d3c',
+        '#f16913',
+        '#d94801',
+        '#8c2d04'
+    ];
+    var coloursIncome = d3.scaleQuantile()
         .domain(income)
         .range(colorClasses);
+}
 
-})
 
-$(document).ready(createMap);
+function rentHistogram(rent, formatCount) {
+    var svg = d3.select("svg"), margin = { top: 50, right: 30, bottom: 100, left: 30 }, width = +svg.attr("width") - margin.left - margin.right, height = +svg.attr("height") - margin.top - margin.bottom, g = svg_rent.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    var x = d3.scaleLinear()
+        .rangeRound([0, width])
+        .domain([0, d3.max(rent)]);
+    var bins = d3.histogram()
+        .domain(x.domain())
+        .thresholds(x.ticks(50))(rent);
+    var y = d3.scaleLinear()
+        .domain([0, d3.max(bins, function (d) { 
+            return d.length; })])
+        .range([height, 0]);
+    var bar_rent = g.selectAll(".bar_rent")
+        .data(bins)
+        .enter().append("g")
+        .attr("class", "bar_rent")
+        .attr("transform", function (d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; })
+        .style("fill", function (d) {
+            return "#000";
+        });
+    bar_rent.append("rect")
+        .attr("class", "rent_rect")
+        .attr("x", 1)
+        .attr("width", x(bins[0].x1) - x(bins[0].x0) - 1)
+        .attr("height", function (d) { return height - y(d.length); })
+        .style("fill", function (d) {
+            return "#eaeaea";
+        });
+    bar_rent.append("text")
+        //.attr("dy", "0em")
+        .attr("y", -5)
+        .attr("x", (x(bins[0].x1) - x(bins[0].x0)) / 2)
+        .attr("text-anchor", "middle")
+        .text(function (d) { return formatCount(d.length); });
+    g.append("g")
+        .attr("class", "axis axis--x")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+    var currentValue = 0;
 
+    var slider = svg_rent.append("g")
+        .attr("class", "slider_rent")
+        .attr("transform", "translate(" + margin.left + "," + (margin.top + 500) + ")");
+    slider.append("line")
+        .attr("class", "track_rent")
+        .attr("x1", x.range()[0])
+        .attr("x2", x.range()[1])
+        .select(function () { return this.parentNode.appendChild(this.cloneNode(true)); })
+        .attr("class", "track-inset_rent")
+        .select(function () { return this.parentNode.appendChild(this.cloneNode(true)); })
+        .attr("class", "track-overlay")
+        .call(d3.drag()
+            .on("start.interrupt", function () { slider.interrupt(); })
+            .on("start drag", function () {
+                currentValue = d3.event.x;
+                update_rent(x.invert(currentValue));
+            }));
+    slider.insert("g", ".track-overlay_rent")
+        .attr("class", "ticks_rent")
+        .attr("transform", "translate(0," + 18 + ")")
+        .selectAll("text")
+        .data(x.ticks(10))
+        .enter()
+        .append("text")
+        .attr("x", x)
+        .attr("y", 10)
+        .attr("text-anchor", "middle")
+        .text(function (d) {
+            return d;
+        });
+    var handle = slider.insert("circle", ".track-overlay_rent")
+        .attr("class", "handle_rent")
+        .attr("r", 9);
+    function update_rent(h) {
+        rent_highest = h;
+        //console.log(income_highest);
+        handle.attr("cx", x(h));
+        // filter data set and redraw plot
+        var newData = rent.filter(function (d) {
+            return d < h;
+        });
+        var bar_rent = d3.selectAll(".rent_rect")
+            .style("fill", function (d) {
+                //console.log(d);
+                if (d.x0 < h) {
+                    return coloursRent(d.x0);
+                }
+                else {
+                    return "#eaeaea";
+                }
+            });
+    }
+    // set color of income histogram
+    var colorClasses = [
+        '#f7fcf5',
+        '#e5f5e0',
+        '#c7e9c0',
+        '#a1d99b',
+        '#74c476',
+        '#41ab5d',
+        '#238b45',
+        '#005a32'
+    ];
+    var coloursRent = d3.scaleQuantile()
+        .domain(rent)
+        .range(colorClasses);
+}
+
+
+function unemployHistogram(unemploy, formatCount) {
+    var svg = d3.select("svg"), margin = { top: 50, right: 30, bottom: 100, left: 30 }, width = +svg.attr("width") - margin.left - margin.right, height = +svg.attr("height") - margin.top - margin.bottom, g = svg_unemploy.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    var x = d3.scaleLinear()
+        .rangeRound([0, width])
+        .domain([0, d3.max(unemploy)]);
+    var bins = d3.histogram()
+        .domain(x.domain())
+        .thresholds(x.ticks(50))(unemploy);
+    var y = d3.scaleLinear()
+        .domain([0, d3.max(bins, function (d) { return d.length; })])
+        .range([height, 0]);
+    var bar_unemploy = g.selectAll(".bar")
+        .data(bins)
+        .enter().append("g")
+        .attr("class", "bar_unemploy")
+        .attr("transform", function (d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; })
+        .style("fill", function (d) {
+            return "#000";
+        });
+    bar_unemploy.append("rect")
+        .attr("class", "unemploy_rect")
+        .attr("x", 1)
+        .attr("width", x(bins[0].x1) - x(bins[0].x0) - 1)
+        .attr("height", function (d) { return height - y(d.length); })
+        .style("fill", function (d) {
+            return "#eaeaea";
+        });
+    bar_unemploy.append("text")
+        //.attr("dy", "0em")
+        .attr("y", -5)
+        .attr("x", (x(bins[0].x1) - x(bins[0].x0)) / 2)
+        .attr("text-anchor", "middle")
+        .text(function (d) { return formatCount(d.length); });
+    g.append("g")
+        .attr("class", "axis axis--x")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+    var currentValue = 0;
+    var slider = svg_unemploy.append("g")
+        .attr("class", "slider")
+        .attr("transform", "translate(" + margin.left + "," + (margin.top + 500) + ")");
+    slider.append("line")
+        .attr("class", "track")
+        .attr("x1", x.range()[0])
+        .attr("x2", x.range()[1])
+        .select(function () { return this.parentNode.appendChild(this.cloneNode(true)); })
+        .attr("class", "track-inset")
+        .select(function () { return this.parentNode.appendChild(this.cloneNode(true)); })
+        .attr("class", "track-overlay")
+        .call(d3.drag()
+            .on("start.interrupt", function () { slider.interrupt(); })
+            .on("start drag", function () {
+                currentValue = d3.event.x;
+                updsvg_unemploy(x.invert(currentValue));
+            }));
+    slider.insert("g", ".track-overlay")
+        .attr("class", "ticks")
+        .attr("transform", "translate(0," + 18 + ")")
+        .selectAll("text")
+        .data(x.ticks(10))
+        .enter()
+        .append("text")
+        .attr("x", x)
+        .attr("y", 10)
+        .attr("text-anchor", "middle")
+        .text(function (d) {
+            return parseInt(d*100) + "%";
+        });
+    var handle = slider.insert("circle", ".track-overlay")
+        .attr("class", "handle")
+        .attr("r", 9);
+    function updsvg_unemploy(h) {
+        unemploy_highest = h;
+        //console.log(income_highest);
+        handle.attr("cx", x(h));
+        // filter data set and redraw plot
+        var newData = unemploy.filter(function (d) {
+            return d < h;
+        });
+        var bar_unemploy = d3.selectAll(".unemploy_rect")
+            .style("fill", function (d) {
+                //console.log(d);
+                if (d.x0 < h) {
+                    return coloursUnemploy(d.x0);
+                }
+                else {
+                    return "#eaeaea";
+                }
+            });
+    }
+    // set color of income histogram
+    var colorClasses = [
+        '#f7fbff',
+        '#deebf7',
+        '#c6dbef',
+        '#9ecae1',
+        '#6baed6',
+        '#4292c6',
+        '#2171b5',
+        '#084594'
+    ];
+    var coloursUnemploy = d3.scaleQuantile()
+        .domain(unemploy)
+        .range(colorClasses);
+}
