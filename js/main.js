@@ -250,7 +250,7 @@ function moveLabel(){
         y1 = d3.event.clientY - 30,
         x2 = d3.event.clientX - labelWidth - 10,
         y2 = d3.event.clientY + 25;
-
+	console.log(d3.event.clientX,d3.event.clientY);
     //horizontal label coordinate, testing for overflow
     var x = d3.event.clientX > window.innerWidth - labelWidth - 20 ? x2 : x1; 
     //vertical label coordinate, testing for overflow
@@ -402,7 +402,7 @@ function onEachFeatureInitial(feature,attributes,map,layer){
 						HighlightData.push(data[i]);
 					}
 				}
-				console.log(HighlightData);
+				console.log("Highlighted data:",HighlightData);
 				if (HighlightData.length == 0){
 					alert("The cbg you just cliced has no connected cbg in the dataset. Please try others.");
 				}
@@ -410,7 +410,7 @@ function onEachFeatureInitial(feature,attributes,map,layer){
 				//AddGrayFeatures(map);
 				
 			};
-		console.log(this.getBounds().getCenter());
+		//console.log(this.getBounds().getCenter());
 		this.addTo(map);
 		map.setView(this.getBounds().getCenter(),10);
 		}
@@ -464,7 +464,9 @@ function onEachFeatureHighlight(feature,attributes,map,layer,data){
             //console.log(data[i]);
 			var popupContent = "<p><b>Origin CensusBlock:</b> " + data[i]["cbg_d"] + "</p>";
 			popupContent += "<p><b>Total Visits: </b>"  + data[i]["number"]+ " times";
-			
+			popupContent += "<p><b>Income: </b>$"  + data[i]["income"]+ "00/year";
+			popupContent += "<p><b>Housing Rent: </b>$"  + data[i]["rent"]+ "/month";
+			popupContent += "<p><b>Unemployment Ratio: </b>"  + data[i]["unemploy_ratio"]+ "%";
 			layer.bindPopup(popupContent);
 			
 			layer.on({
@@ -495,7 +497,7 @@ function onEachFeatureHighlight(feature,attributes,map,layer,data){
 						HighlightData.push(data[i]);
 					}
 				}
-				console.log(HighlightData);
+				console.log("Highlight data:", HighlightData);
 				if (HighlightData.length == 0){
 					alert("The cbg you just cliced has no connected cbg in the dataset. Please try others.");
 				}
@@ -503,7 +505,7 @@ function onEachFeatureHighlight(feature,attributes,map,layer,data){
 				//AddGrayFeatures(map);
 				
 			};
-		console.log(this.getBounds().getCenter());
+		//console.log(this.getBounds().getCenter());
 		this.addTo(map);
 		map.setView(this.getBounds().getCenter(),10);
 		}
@@ -517,7 +519,7 @@ function styleHightlighted(feature,attributes,data,cbg_d){
 //	var checkExistence = checkExistence(feature.properties.travel_d_4,data);
 	
 	for (i=0; i<data.length; i++){
-		if (feature.properties.travel_d_4 == data[i]["cbg_o"]&&(parseFloat(data[i]["income"])<income_highest)){			
+		if (feature.properties.travel_d_4 == data[i]["cbg_o"]&&(parseFloat(data[i]["income"])<income_highest)&&(parseFloat(data[i]["rent"])<rent_highest)&&(parseFloat(data[i]["unemploy_ratio"])<unemploy_highest)){			
 			return {
 			fillColor: "#FFFF00",
 			weight: 0.4,
@@ -776,7 +778,7 @@ function incomeHistogram(income, formatCount) {
         .attr("class", "track")
         //.attr("x1", x.range()[0])
         .attr("x1", function(){
-            console.log(x.range());
+            //console.log(x.range());
         })
             //.range()[0])
         .attr("x2", x.range()[1])
@@ -810,6 +812,9 @@ function incomeHistogram(income, formatCount) {
         income_highest = h;
         //console.log(income_highest);
         handle.attr("cx", x(h));
+		if (income_highest < 0){
+			income_highest = 100000;
+		}
         // filter data set and redraw plot
         var newData = income.filter(function (d) {
             return d < h;
@@ -841,7 +846,7 @@ function incomeHistogram(income, formatCount) {
         .range(colorClasses);
 }
 
-
+//generate the housing rent histrogram
 function rentHistogram(rent, formatCount) {
     var svg = d3.select("svg"), margin = { top: 50, right: 30, bottom: 100, left: 30 }, width = +svg.attr("width") - margin.left - margin.right, height = +svg.attr("height") - margin.top - margin.bottom, g = svg_rent.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     var x = d3.scaleLinear()
@@ -918,6 +923,9 @@ function rentHistogram(rent, formatCount) {
     function update_rent(h) {
         rent_highest = h;
         //console.log(income_highest);
+		if (rent_highest < 0){
+			rent_highest = 100000;
+		}
         handle.attr("cx", x(h));
         // filter data set and redraw plot
         var newData = rent.filter(function (d) {
@@ -934,7 +942,7 @@ function rentHistogram(rent, formatCount) {
                 }
             });
     }
-    // set color of income histogram
+    // set color of housing rate histogram
     var colorClasses = [
         '#f7fcf5',
         '#e5f5e0',
@@ -950,7 +958,7 @@ function rentHistogram(rent, formatCount) {
         .range(colorClasses);
 }
 
-
+//generate the unemployment histrogram
 function unemployHistogram(unemploy, formatCount) {
     var svg = d3.select("svg"), margin = { top: 50, right: 30, bottom: 100, left: 30 }, width = +svg.attr("width") - margin.left - margin.right, height = +svg.attr("height") - margin.top - margin.bottom, g = svg_unemploy.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     var x = d3.scaleLinear()
@@ -1024,7 +1032,9 @@ function unemployHistogram(unemploy, formatCount) {
         .attr("r", 9);
     function updsvg_unemploy(h) {
         unemploy_highest = h;
-        //console.log(income_highest);
+		if (unemploy_highest < 0){
+			unemploy_highest = 100000;
+		}		
         handle.attr("cx", x(h));
         // filter data set and redraw plot
         var newData = unemploy.filter(function (d) {
@@ -1041,7 +1051,7 @@ function unemployHistogram(unemploy, formatCount) {
                 }
             });
     }
-    // set color of income histogram
+    // set color of unemployment histogram
     var colorClasses = [
         '#f7fbff',
         '#deebf7',
