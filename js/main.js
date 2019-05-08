@@ -230,6 +230,7 @@ function setLabel(props){
         .attr("class", "infolabel")
         .attr("id", props.RowLabels + "_label")
         .html(labelAttribute);
+    console.log(infolabel);
 
 	var datarange = 'frequency:' + props["Count_of_distance_from_home"];
     var regionName = infolabel.append("div")
@@ -247,7 +248,7 @@ function moveLabel(){
 
     //use coordinates of mousemove event to set label coordinates
     var x1 = d3.event.clientX + 10,
-        y1 = d3.event.clientY - 30,
+        y1 = d3.event.clientY + 50,
         x2 = d3.event.clientX - labelWidth - 10,
         y2 = d3.event.clientY + 25;
 	console.log(d3.event.clientX,d3.event.clientY);
@@ -687,18 +688,18 @@ function style1(feature){
 
 var svg_income = d3.select("#vis_income")
     .append("svg")
-    .attr("width",1000)
-    .attr("height",600);
+    .attr("width",400)
+    .attr("height",200);
 
 var svg_rent = d3.select("#vis_rent")
     .append("svg")
-    .attr("width",1000)
-    .attr("height",600);
+    .attr("width",400)
+    .attr("height",200);
 
 var svg_unemploy = d3.select("#vis_unemploy")
     .append("svg")
-    .attr("width",1000)
-    .attr("height",600);
+    .attr("width",400)
+    .attr("height",200);
 
 
 // Load csv data
@@ -734,13 +735,14 @@ d3.csv("data/geog575.csv", function(d){
 $(document).ready(createMap);
 
 function incomeHistogram(income, formatCount) {
-    var svg = d3.select("svg"), margin = { top: 50, right: 30, bottom: 100, left: 30 }, width = +svg.attr("width") - margin.left - margin.right, height = +svg.attr("height") - margin.top - margin.bottom, g = svg_income.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    //var svg = d3.select("svg"), margin = { top: 50, right: 30, bottom: 100, left: 30 }, width = +svg.attr("width") - margin.left - margin.right, height = +svg.attr("height") - margin.top - margin.bottom, g = svg_income.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    var svg = d3.select("svg"), margin = { top: 20, right: 0, bottom: 50, left: 50 }, width = +svg.attr("width") - margin.left - margin.right, height = +svg.attr("height") - margin.top - margin.bottom, g = svg_income.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     var x = d3.scaleLinear()
         .rangeRound([0, width])
         .domain([0, d3.max(income)]);
     var bins = d3.histogram()
         .domain(x.domain())
-        .thresholds(x.ticks(50))(income);
+        .thresholds(x.ticks(30))(income);
     var y = d3.scaleLinear()
         .domain([0, d3.max(bins, function (d) { return d.length; })])
         .range([height, 0]);
@@ -773,7 +775,7 @@ function incomeHistogram(income, formatCount) {
     var currentValue = 0;
     var slider = svg_income.append("g")
         .attr("class", "slider")
-        .attr("transform", "translate(" + margin.left + "," + (margin.top + 500) + ")");
+        .attr("transform", "translate(" + margin.left + "," + (margin.top + 150) + ")");
     slider.append("line")
         .attr("class", "track")
         //.attr("x1", x.range()[0])
@@ -848,13 +850,13 @@ function incomeHistogram(income, formatCount) {
 
 //generate the housing rent histrogram
 function rentHistogram(rent, formatCount) {
-    var svg = d3.select("svg"), margin = { top: 50, right: 30, bottom: 100, left: 30 }, width = +svg.attr("width") - margin.left - margin.right, height = +svg.attr("height") - margin.top - margin.bottom, g = svg_rent.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    var svg = d3.select("svg"), margin = { top: 20, right: 0, bottom: 50, left: 10 }, width = +svg.attr("width") - margin.left - margin.right, height = +svg.attr("height") - margin.top - margin.bottom, g = svg_rent.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     var x = d3.scaleLinear()
         .rangeRound([0, width])
         .domain([0, d3.max(rent)]);
     var bins = d3.histogram()
         .domain(x.domain())
-        .thresholds(x.ticks(50))(rent);
+        .thresholds(x.ticks(30))(rent);
     var y = d3.scaleLinear()
         .domain([0, d3.max(bins, function (d) { 
             return d.length; })])
@@ -889,7 +891,7 @@ function rentHistogram(rent, formatCount) {
 
     var slider = svg_rent.append("g")
         .attr("class", "slider_rent")
-        .attr("transform", "translate(" + margin.left + "," + (margin.top + 500) + ")");
+        .attr("transform", "translate(" + margin.left + "," + (margin.top + 150) + ")");
     slider.append("line")
         .attr("class", "track_rent")
         .attr("x1", x.range()[0])
@@ -960,13 +962,13 @@ function rentHistogram(rent, formatCount) {
 
 //generate the unemployment histrogram
 function unemployHistogram(unemploy, formatCount) {
-    var svg = d3.select("svg"), margin = { top: 50, right: 30, bottom: 100, left: 30 }, width = +svg.attr("width") - margin.left - margin.right, height = +svg.attr("height") - margin.top - margin.bottom, g = svg_unemploy.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    var svg = d3.select("svg"), margin = { top: 20, right: 0, bottom: 50, left: 10 }, width = +svg.attr("width") - margin.left - margin.right, height = +svg.attr("height") - margin.top - margin.bottom, g = svg_unemploy.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     var x = d3.scaleLinear()
         .rangeRound([0, width])
         .domain([0, d3.max(unemploy)]);
     var bins = d3.histogram()
         .domain(x.domain())
-        .thresholds(x.ticks(50))(unemploy);
+        .thresholds(x.ticks(30))(unemploy);
     var y = d3.scaleLinear()
         .domain([0, d3.max(bins, function (d) { return d.length; })])
         .range([height, 0]);
@@ -999,7 +1001,7 @@ function unemployHistogram(unemploy, formatCount) {
     var currentValue = 0;
     var slider = svg_unemploy.append("g")
         .attr("class", "slider")
-        .attr("transform", "translate(" + margin.left + "," + (margin.top + 500) + ")");
+        .attr("transform", "translate(" + margin.left + "," + (margin.top + 150) + ")");
     slider.append("line")
         .attr("class", "track")
         .attr("x1", x.range()[0])
