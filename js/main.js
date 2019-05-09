@@ -148,7 +148,7 @@ function setChart(csvData,colorScale){
         .text('{"stroke": "none", "stroke-width": "0px"}');
 
     var chartTitle = chart.append("text")
-        .attr("x", w-430)
+        .attr("x", w-450)
         .attr("y", 40)
         .attr("class", "chartTitle")
         .text("The Histogram of Average Travel Distance");
@@ -256,12 +256,12 @@ function moveLabel(){
     var x1 = d3.event.clientX + 10,
         y1 = d3.event.clientY + 40,
         x2 = d3.event.clientX - labelWidth + 10,
-        y2 = d3.event.clientY - 40;
+        y2 = d3.event.clientY - 80;
 	console.log(d3.event.clientX,d3.event.clientY);
     //horizontal label coordinate, testing for overflow
     var x = d3.event.clientX > window.innerWidth*0.5 - labelWidth - 20 ? x2 : x1; 
     //vertical label coordinate, testing for overflow
-    var y = d3.event.clientY < 700 ? y1 : y2; 
+    var y = d3.event.clientY < 680 ? y1 : y2; 
 
     d3.select(".infolabel")
         .style("left", x + "px")
