@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width">
-		<title>GEOG575_Lab1</title>
+		<title>SocialMobility in WI</title>
 
 		<!--put your external stylesheet links here-->
 		<link rel="stylesheet" href="lib/leaflet/leaflet.css">
@@ -19,7 +19,7 @@
 	<body>
 
 		<nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-			<a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">Company name</a>
+			<a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#"><b>Social Mobility in Wisconsin</b></a>
 			<ul class="navbar-nav px-3">
 			<button type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#myModal">Help</button>
 
@@ -36,14 +36,15 @@
 				<div class="modal-content">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal">&times;</button>
-					<h4 class="modal-title">Modal Header</h4>
+					<!-- <h4 class="modal-title">Modal Header</h4> -->
 				</div>
 				<div class="modal-body">
-					<p>Some text in the modal.</p>
+					<p>This website shows how people move among different census block groups (CBGs). By clicking one CBG, The CBG that previously went to the clicked one will be highlighted.
+						The histogram on the right can be used to filter the highlighted CBGs to show the movement pattern of different groups. </p>
 				</div>
-				<div class="modal-footer">
+<!-- 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-				</div>
+				</div> -->
 				</div>
 
 			</div>
@@ -58,6 +59,7 @@
 			<main role="main" class="col-md-8">
 				<!--<div id="map" style="margin-left:10%"></div>-->
 				<div id="map"></div>
+				<div id="vis_travel"></div>
 			</main>
 
 			<nav class="col-md-5 d-none d-md-block bg-light sidebar" style="margin-left: -10%">

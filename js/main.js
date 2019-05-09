@@ -29,7 +29,7 @@ function createMap(){
 
 	CreateLegend(map);
 	//create the map title
-	createTitle(map); 
+	//createTitle(map); 
 
 	//create the refresh button
 	L.Control.Refresh = L.Control.extend(
@@ -115,10 +115,10 @@ function makeColorScale(data){
 //function to create coordinated bar chart
 function setChart(csvData,colorScale){
 
-	var w = window.innerWidth * 0.8, h = window.innerHeight * 0.20,
+	var w = window.innerWidth * 0.55, h = window.innerHeight * 0.20,
 		translate = "translate(" + 3 + "," + 5 + ")";
     //Example 1.5 line 1...container block
-    var chart = d3.select("body") //get the <body> element from the DOM
+    var chart = d3.select("#vis_travel") //get the <body> element from the DOM
         .append("svg") //put a new svg in the body
         .attr("width", w) //assign the width
         .attr("height", h) //assign the height
@@ -147,6 +147,12 @@ function setChart(csvData,colorScale){
     var desc = bars.append("desc")
         .text('{"stroke": "none", "stroke-width": "0px"}');
 
+    var chartTitle = chart.append("text")
+        .attr("x", w-430)
+        .attr("y", 40)
+        .attr("class", "chartTitle")
+        .text("The Histogram of Average Travel Distance");
+		
 	var yScale = d3.scaleLinear()
 	.range([150,0])
 	.domain([0, 1645]);       
@@ -176,7 +182,7 @@ function setChart(csvData,colorScale){
 //function to position, size, and color bars in chart
 function updateChart(bars, n, colorScale){
 	//chart frame dimensions
-	var chartWidth = window.innerWidth * 0.75,
+	var chartWidth = window.innerWidth * 0.5,
 	chartHeight = window.innerHeight * 0.20,
 	leftPadding = 1,
 	rightPadding = 1,
@@ -248,14 +254,14 @@ function moveLabel(){
 
     //use coordinates of mousemove event to set label coordinates
     var x1 = d3.event.clientX + 10,
-        y1 = d3.event.clientY + 50,
-        x2 = d3.event.clientX - labelWidth - 10,
-        y2 = d3.event.clientY + 25;
+        y1 = d3.event.clientY + 40,
+        x2 = d3.event.clientX - labelWidth + 10,
+        y2 = d3.event.clientY - 40;
 	console.log(d3.event.clientX,d3.event.clientY);
     //horizontal label coordinate, testing for overflow
-    var x = d3.event.clientX > window.innerWidth - labelWidth - 20 ? x2 : x1; 
+    var x = d3.event.clientX > window.innerWidth*0.5 - labelWidth - 20 ? x2 : x1; 
     //vertical label coordinate, testing for overflow
-    var y = d3.event.clientY < 30 ? y2 : y1; 
+    var y = d3.event.clientY < 700 ? y1 : y2; 
 
     d3.select(".infolabel")
         .style("left", x + "px")
@@ -365,7 +371,7 @@ function removeLayers(map){
 	
 	//add OSM base tilelayer
    L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-		attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' +'<br>Data sources: United States Census Bureau <br> Creator: Yunlei Liang'
+		attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' +'<br>Data sources: United States Census Bureau <br> Creator: Yunlei Liang, Yuhao Kang'
 	}).addTo(map);
 
 	
@@ -465,9 +471,9 @@ function onEachFeatureHighlight(feature,attributes,map,layer,data){
             //console.log(data[i]);
 			var popupContent = "<p><b>Origin CensusBlock:</b> " + data[i]["cbg_d"] + "</p>";
 			popupContent += "<p><b>Total Visits: </b>"  + data[i]["number"]+ " times";
-			popupContent += "<p><b>Income: </b>$"  + data[i]["income"]+ "00/year";
-			popupContent += "<p><b>Housing Rent: </b>$"  + data[i]["rent"]+ "/month";
-			popupContent += "<p><b>Unemployment Ratio: </b>"  + data[i]["unemploy_ratio"]+ "%";
+			//popupContent += "<p><b>Income: </b>$"  + data[i]["income"]+ "00/year";
+			//popupContent += "<p><b>Housing Rent: </b>$"  + data[i]["rent"]+ "/month";
+			//popupContent += "<p><b>Unemployment Ratio: </b>"  + data[i]["unemploy_ratio"]+ "%";
 			layer.bindPopup(popupContent);
 			
 			layer.on({

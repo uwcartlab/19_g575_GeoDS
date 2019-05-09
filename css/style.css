@@ -4,8 +4,8 @@
 }
 
 #map {
-    height:600px;
-    width:80%;
+    height:88%;
+    width:85%;
     display: inline-block;
 }
 
@@ -83,6 +83,12 @@
     padding: 0;
     display: inline-block;
     line-height: 1em;
+}
+
+.chartTitle {
+    font-family: sans-serif;
+    font-size: 1.2em;
+    font-weight: bold;
 }
 
 
